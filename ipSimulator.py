@@ -4,9 +4,9 @@ import globals as G
 
 class IPSimulator:
 	
-	def __init__(self, env, capacity, lossRate):
+	def __init__(self, env, capacity, numWavelengths, lossRate):
 		self.flows = []
-		self.effeCapacity = min(capacity*(1-G.bgUtil), 1.22*G.MSS*8/(G.RTT*sqrt(lossRate))/1e9)
+		self.effeCapacity = min(capacity*(1-G.bgUtil), 1.22*G.MSS*8/(G.RTT*sqrt(lossRate))/1e9)*numWavelengths
 		self.ipPath_proc = env.process(self.ipPath(env))
 		
 	def ipPath(self, env):	
@@ -23,6 +23,6 @@ class IPSimulator:
 						self.updateRate()
 
 	def updateRate(self):
-		newRate = self.effeCapacity/len(self.flows)
+		newRate = min(G.Rc, self.effeCapacity/len(self.flows))
 		for t in self.flows:
 			t.transfer_proc.interrupt(newRate)
