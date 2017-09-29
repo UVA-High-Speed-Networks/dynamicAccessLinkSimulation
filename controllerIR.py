@@ -14,7 +14,7 @@ load = float(sys.argv[3])
 # arrivalRate = (mean*8/0.1)/load
 arrivalRate = 86400/load
 print arrivalRate
-W = float(sys.argv[4]) # reservation window, in seconds
+W = float(sys.argv[4]) # NO USE IN IR
 lossRate = float(sys.argv[5])
 num100GIP = float(sys.argv[6])
 
