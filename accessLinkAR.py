@@ -79,8 +79,6 @@ class Transfer:
 					assert self.oldTime == -1
 				self.oldTime = env.now
 				self.flowRate = i.cause	
-				if 	self.flowRate < 30:
-					pdb.set_trace()	
 				assert self.flowRate != 0
 				self.estTime2Finish = self.sizeLeft/self.flowRate
 		
