@@ -8,9 +8,9 @@ lossRate = 1e-11
 num100GIP = 2
 
 if mode == 'AR':
-	result = 'logs/results'+mode+'-W'+str(W)+'-sharedPorts'+str(numHighSpeedPorts)+'-load'+str(load)+'-loss'+str(lossRate)+'num100GIP'+str(int(num100GIP))+'.csv'
+	result = 'logs/results'+mode+'-W'+str(W)+'-sharedPorts'+str(numHighSpeedPorts)+'-load'+str(load)+'-loss'+str(lossRate)+'-num100GIP'+str(int(num100GIP))+'.csv'
 else:
-	result = 'logs/results'+mode+'-sharedPorts'+str(numHighSpeedPorts)+'-load'+str(load)+'-loss'+str(lossRate)+'num100GIP'+str(int(num100GIP))+'.csv'
+	result = 'logs/results'+mode+'-sharedPorts'+str(numHighSpeedPorts)+'-load'+str(load)+'-loss'+str(lossRate)+'-num100GIP'+str(int(num100GIP))+'.csv'
 
 with open(result, 'wt') as csvfile:
 	writer = csv.writer(csvfile)
