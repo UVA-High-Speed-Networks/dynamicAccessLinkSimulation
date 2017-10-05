@@ -3,7 +3,8 @@ import simpy
 import Queue
 import accessLinkAR as A 
 import globals as G
-import ipSimulator as IP
+import ipStorageSimulator as ISP
+import postProcessing
 
 numCustomers = int(sys.argv[1])
 numHighSpeedPorts = int(sys.argv[2])
@@ -18,19 +19,20 @@ lossRate = float(sys.argv[5])
 num100GIP = float(sys.argv[6])
 
 
-output = 'logs/AR-K' + str(numCustomers) + '-N' + str(numHighSpeedPorts) + '-W' + str(int(W)) + '-load' + str(int(load))  + '-lossRate' + str(lossRate) + '-num100GIP' + str(int(num100GIP))
+output = 'AR-K' + str(numCustomers) + '-N' + str(numHighSpeedPorts) + '-W' + str(int(W)) + '-load' + str(int(load))  + '-lossRate' + str(lossRate) + '-num100GIP' + str(int(num100GIP))
 with open(output, 'wt') as f:
 	writer = csv.writer(f)
 	writer.writerow( ('customerId', 'datasetSize(TB)', 'arrivalTime', 'startTimeDelay', 'responseTime', 'circuitOrNot') )
 
 print output
 
-def controller(env, pipe):
+def controller(env, pipe, ipPathProc):
 	portAvailTime = [0.0 for i in range(numHighSpeedPorts)] # the earliest available time for each port
 	lastCustomer = [-1 for i in range(numHighSpeedPorts)] # the last customer that uses each port
 	totalTransfers = 0
 	delayedTransfers = 0
-	while delayedTransfers < G.numDelayed and totalTransfers < 10**8:
+# 	while delayedTransfers < G.numDelayed and totalTransfers < 10**7:
+	while totalTransfers < 10**7:
 		msg = yield pipe.get()
 		if msg[0] == 'newRequest':
 			minStartTime = env.now + G.timeout
@@ -61,27 +63,30 @@ def controller(env, pipe):
 			else:
 				if totalTransfers%10000 == 0:
 					print str(delayedTransfers) + ', ' + str(totalTransfers)
-			if delayedTransfers >= G.numDelayed:
-				with open(output, 'a') as f:
-					writer = csv.writer(f)
-					writer.writerow( ('totalTransfers', totalTransfers) )
-					writer.writerow( ('delayedTransfers', delayedTransfers) )
+					ipPathProc.interrupt(['simFinish'])
+# 			if delayedTransfers >= G.numDelayed:
+# 				with open(output, 'a') as f:
+# 					writer = csv.writer(f)
+# 					writer.writerow( ('totalTransfers', totalTransfers) )
+# 					writer.writerow( ('delayedTransfers', delayedTransfers) )
 				
-	if delayedTransfers < G.numDelayed:
-		with open(output, 'a') as f:
-			writer = csv.writer(f)
-			writer.writerow( ('totalTransfers', totalTransfers) )
-			writer.writerow( ('delayedTransfers', delayedTransfers) )			
-
+# 	if delayedTransfers < G.numDelayed:
+	with open(output, 'a') as f:
+		writer = csv.writer(f)
+		writer.writerow( ('totalTransfers', totalTransfers) )
+		writer.writerow( ('delayedTransfers', delayedTransfers) )			
 	
-
+	ipPathProc.interrupt(['simFinish'])
+	env.timeout(1)
+	
+# 	postProcessing.parser('AR', numCustomers, numHighSpeedPorts, W, load, lossRate, num100GIP)
 
 	
 env = simpy.Environment()
 pipe = simpy.Store(env)
-ipSim = IP.IPSimulator(env, G.Rh, num100GIP, lossRate)
+ipSim = ISP.IPStorage(env, G.Rh, num100GIP, lossRate, output)
 customers = [A.AccessLink(env, pipe, ipSim.ipPath_proc, lossRate, i, arrivalRate, output) for i in range(numCustomers)] 
-ctr = env.process(controller(env, pipe))
+ctr = env.process(controller(env, pipe, ipSim.ipPath_proc))
 
 env.run(until=ctr)
 

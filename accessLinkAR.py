@@ -62,16 +62,20 @@ class Transfer:
 			path = i.cause[0] 
 			if path == 'circuit': # the transfer will be carried on a circuit
 				self.ipSim = ip100GProc
+				env.process(circuit(env, i.cause[1], self.size*1000*8/G.Rc, ip100GProc))
 				yield env.timeout(i.cause[1] + self.blockSize*8/G.Rc) # wait for circuit to start and account for store-and-forward delay
 			else: # fall back to 10 GE links
 				self.ipSim = ip10GProc
+# 			print 'before start flow'
+# 			pdb.set_trace()
 			self.ipSim.interrupt(['flowStart', self])
 		
-		while self.sizeLeft > 10**-15:
+		while self.sizeLeft > 10**-6:
 			try: 
 				yield env.timeout(self.estTime2Finish)
 				self.sizeLeft -= (env.now - self.oldTime)*self.flowRate
 			except simpy.Interrupt as i:
+# 				pdb.set_trace()
 				assert i.cause <= G.Rc
 				if self.flowRate > 0:
 					self.sizeLeft -= (env.now - self.oldTime)*self.flowRate
@@ -82,6 +86,7 @@ class Transfer:
 				assert self.flowRate != 0
 				self.estTime2Finish = self.sizeLeft/self.flowRate
 		
+# 		pdb.set_trace()
 		self.ipSim.interrupt(['flowFinish', self])
 		if path == 'circuit':
 			fileOpenOverhead = ceil(self.size*1000/self.blockSize)*G.tau
@@ -102,6 +107,13 @@ class Transfer:
 				pass		
 
 	
+def circuit(env, waitTime1, waitTime2, ip100GProc):
+	yield env.timeout(waitTime1)
+# 	print 'before start circuit'
+# 	pdb.set_trace()
+	ip100GProc.interrupt(['circuitStart'])
+	yield env.timeout(waitTime2)
+	ip100GProc.interrupt(['circuitEnd'])
 	
 	
 	
